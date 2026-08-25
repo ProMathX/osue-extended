@@ -1,0 +1,5 @@
+*   [Do I cast the result of malloc?](http://stackoverflow.com/q/605845/5444148)
+*   [bzero() & bcopy() versus memset() & memcpy()](http://stackoverflow.com/q/18330673/5444148)
+*   [What are the C functions from the standard library that must / should be avoided?](http://stackoverflow.com/q/2565727/5444148)
+*   [Undefined, unspecified and implementation-defined behavior](http://stackoverflow.com/q/2397984/5444148)
+*   [What is the difference between char s[] and char *s in C?](http://stackoverflow.com/q/1704407/5444148)
