@@ -13,8 +13,8 @@
  */
 
 /**
- * @todo implement the error handling and the file input? It doesnt work somehow   
- * 
+ * @todo implement the error handling and the file input? It doesnt work somehow
+ *
  */
 #include <errno.h>
 #include <stdbool.h>
@@ -103,8 +103,7 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    int flags, opt, nsecs, tfnd;
-    nsecs = 0, tfnd = 0, flags = 0;
+    int opt;
 
     bool optionDelay = false;
     double seconds;
@@ -134,6 +133,7 @@ int main(int argc, char **argv)
              * @todo write error handling
              *
              */
+            optionDelay = true;
             seconds = strtof(optarg, NULL);
             break;
 
@@ -146,8 +146,9 @@ int main(int argc, char **argv)
 
             /**
              * @todo implement error handling
-             * 
+             *
              */
+            optionOutput = true;
             OUTPUTFILE = fopen(optarg, "w+");
             break;
 
@@ -169,8 +170,6 @@ int main(int argc, char **argv)
         }
     }
 
-    printf("flags=%d; tfnd=%d; optind=%d\n", flags, tfnd, optind);
-
     if (optind >= argc)
     {
         fprintf(stderr, "Expected argument after options\n");
@@ -189,7 +188,10 @@ int main(int argc, char **argv)
         int c;
         while ((c = fgetc(INPUTFILE)) != EOF)
         {
-            fputs(AsciiToBianry(c), OUTPUTFILE);
+            if (optionOutput)
+                fputs(AsciiToBianry((char)c), OUTPUTFILE);
+            else
+                fputs(AsciiToBianry((char)c), OUTPUTFILE);
 
             if (optionDelay)
             {
