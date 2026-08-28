@@ -6,7 +6,9 @@ This is a extended repository on [sueszli](https://github.com/sueszli/osue/) whi
 I created some templates, .clang-format and a generic Makefile on my gist:
 1. https://gist.github.com/ProMathX/8671409e58877019d647575ca541271e
 
-
+# ATTENTION
+For the implentation NO AI WAS USED I REPEAT NO AI, nor in VSCODE, nor to use as static analysis.
+Everything written in my own blood, tears and sweat, no goddamn clanker can replace us. Fuck clankers.
 
 ## The Programming setup:
     1. Neovim v0.12.3 with lsp's configured [dotfiles](https://github.com/ProMathX/dotfiles)
