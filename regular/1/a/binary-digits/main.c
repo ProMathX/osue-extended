@@ -12,6 +12,7 @@
  *
  */
 
+#include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -20,30 +21,34 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-/**
- * @brief Reverses char, reason, big endian byte order
- *
- * @param s
- * @return char*
+
+#define error(msg, program_name)                                                                                       \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        printf("%s\n", msg);                                                                                           \
+        printf("Error (%d): %s\n", errno, strerror(errno));                                                            \
+        fprintf(stderr, "Usage: %s [-d DELAY] [-o OUTPUTFILE] [FILE]\n", program_name);                                \
+        exit(EXIT_FAILURE);                                                                                            \
+    } while (0)
+
+/**                                                                                                    \
+ * @brief Reverses char, reason, big endian byte order                                                 \
+ *                                                                                                     \
+ * @param s                                                                                            \
+ * @return char*                                                                                       \
  */
-static char *reverse(char *s)
+void reverse(char *s, size_t first, size_t last)
 {
-    char *rv = (char *)malloc(strlen(s) + 1);
-
-    if (rv == NULL)
+    if (first >= last)
     {
-        printf("An error occured!\n");
-        printf("Error (%d): %s\n", errno, strerror(errno));
-        exit(EXIT_FAILURE);
+        return;
     }
 
-    for (size_t i = 0; i < strlen(s); i++)
-    {
-        rv[i] = s[strlen(s) - 1 - i];
-    }
+    char tmp = s[first];
+    s[first] = s[last];
+    s[last] = tmp;
 
-    rv[strlen(s)] = '\0';
-    return rv;
+    reverse(s, first + 1, last - 1);
 }
 
 /**
@@ -52,36 +57,33 @@ static char *reverse(char *s)
  * @param c
  * @return char*
  */
-static char *AsciiToBianry(char c)
+static char *AsciiToBinary(char c)
 {
-    char *rv = (char *)calloc(9, 1);
+    char *rv = (char *)calloc(1, 9);
 
     if (rv == NULL)
-    {
-        printf("An error occured!\n");
-        printf("Error (%d): %s\n", errno, strerror(errno));
-        exit(EXIT_FAILURE);
-    }
+        error("Failed to allocate memory", "AsciiToBinary(char c)");
 
     for (int i = 0; i < 8; ++i)
     {
         rv[i] = (c & (1 << i) ? '1' : '0');
     }
 
-    return reverse(rv);
+    size_t last = strlen(rv) - 1;
+
+    reverse(rv, 0, last);
+
+    return rv;
 }
 
 static void wait_nanosleep(double time)
 {
-    time_t seconds = (time_t)time;
-    long nanoseconds = (long)((time - (double)seconds) * 1e9);
+    time_t seconds = (long)time;
+    time_t nanoseconds = (long)((time - (double)seconds) * 1e9);
     struct timespec t1 = {seconds, nanoseconds};
 
     if (nanosleep(&t1, NULL) == -1)
-    {
-        printf("Error (%d): %s\n", errno, strerror(errno));
-        exit(EXIT_FAILURE);
-    }
+        error("failed to construct the timer", "wait_nanosleep");
 }
 
 /**
@@ -93,31 +95,25 @@ static void wait_nanosleep(double time)
  */
 int main(int argc, char **argv)
 {
-    FILE *INPUTFILE;
-    FILE *OUTPUTFILE = stdout;
-    if (OUTPUTFILE == NULL)
-    {
-        printf("Error (%d): %s\n", errno, strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-
+    FILE *INPUTFILE = stdin;
     int opt;
 
     bool optionDelay = false;
     double seconds;
 
-    bool optionOutput = false;
+    // bool optionOutput = false;
+    FILE *OUTPUTFILE = stdout;
 
-    while ((opt = getopt(argc, argv, "d:o::")) != -1)
+    while ((opt = getopt(argc, argv, "d:o:")) != -1)
     {
         switch (opt)
         {
         /**
          *
          * @brief d flag gets the time in nanoseconds, with wait_nanosleep()
-         * If the option -d is given, the program should wait the specified amount of seconds after each digit written.
-         *   The delay may be specified as an ASCII represented decimal floating point number, e.g. 0.5.
-         * also use the strtod() function to convert the time
+         * If the option -d is given, the program should wait the specified amount of seconds after each digit
+         * written. The delay may be specified as an ASCII represented decimal floating point number, e.g. 0.5. also
+         * use the strtod() function to convert the time
          */
         case 'd':
             /**
@@ -129,18 +125,16 @@ int main(int argc, char **argv)
             break;
 
         /**
-         * @brief If the option -o is given, the output is written to the specified file outfile. Otherwise, the output
-         *  is written to stdout
+         * @brief If the option -o is given, the output is written to the specified file outfile. Otherwise, the
+         * output is written to stdout
          *
          */
         case 'o':
 
-            /**
-             * @todo implement error handling
-             *
-             */
-            optionOutput = true;
+            // optionOutput = true;
             OUTPUTFILE = fopen(optarg, "w+");
+            if (OUTPUTFILE == NULL)
+                error("failed to allocate the OUTPUTFILE", "main()");
             break;
 
         /**
@@ -148,20 +142,15 @@ int main(int argc, char **argv)
          *
          */
         case ':':
-            printf("Error no Arguments given");
-            fprintf(stderr, "Usage: %s [-d DELAY] [-o OUTPUTFILE] [FILE]\n", argv[0]);
-            exit(EXIT_FAILURE);
+            error("Error no Arguments given", argv[0]);
             break;
 
         case '?':
-            printf("ERROR: unknown arg %c\n", optopt);
-            fprintf(stderr, "Usage: %s [-d DELAY] [-o OUTPUTFILE] [FILE]\n", argv[0]);
-            exit(EXIT_FAILURE);
+            error("unknown arg", argv[0]);
             break;
         }
     }
 
-    // Nasty, mit opind mit >= geht nicht 
     if (optind > argc)
     {
         fprintf(stderr, "Expected argument after options\n");
@@ -170,19 +159,22 @@ int main(int argc, char **argv)
 
     do
     {
+
         if ((argc - optind) == 0)
             INPUTFILE = stdin;
 
         else
-            INPUTFILE = fopen(argv[optind], "r");
+            INPUTFILE = fopen(argv[optind], "r+");
+
+        if (INPUTFILE == NULL)
+            error("failed to allocate the INPUTFILE", "main()");
 
         int c;
         while ((c = fgetc(INPUTFILE)) != EOF)
         {
-            if (optionOutput)
-                fputs(AsciiToBianry((char)c), OUTPUTFILE);
-            else
-                fputs(AsciiToBianry((char)c), OUTPUTFILE);
+            char *binary = AsciiToBinary((char)c);
+            fputs(binary, OUTPUTFILE);
+            free(binary);
 
             if (optionDelay)
             {
@@ -193,6 +185,8 @@ int main(int argc, char **argv)
         fprintf(OUTPUTFILE, "\n");
         fclose(INPUTFILE);
     } while (++optind < argc);
+
     fclose(OUTPUTFILE);
+
     exit(EXIT_SUCCESS);
 }

@@ -11,6 +11,8 @@ all: main
 main: main.o
 	gcc -o main main.o $(library) $(verbose)
 
+main.o: main.c
+		gcc -c main.c $(verbose)
 clean:
 	shred -uvz main *.o
 
