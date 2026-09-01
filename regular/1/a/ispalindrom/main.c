@@ -1,4 +1,16 @@
+/**
+ * @file main.c
+ * @author Kernkraftwerk (kernkraftdev@hotmail.com)
+ * @brief
+ * @version 0.1
+ * @date 2026-09-01
+ *
+ * @copyright Copyright (c) 2026
+ *
+ */
+
 #include <assert.h>
+#include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -6,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <sys/types.h>
 #include <unistd.h>
 
 #define error(msg, program_name)                                                                                       \
@@ -49,7 +62,7 @@ char *strrev(const char *s)
  * @return true if the string is a palindrome
  * @return false if the string is not a palindrome
  */
-bool isPalindrome(const char *s)
+bool isPalindromeNormal(const char *s)
 {
     if (s == NULL)
     {
@@ -60,6 +73,27 @@ bool isPalindrome(const char *s)
     free(string_check);
     return rv;
 }
+
+bool isPalindromeIgnore(const char *s)
+{
+    if (s == NULL)
+    {
+        error("Invalid String", "isPalindrome()");
+    }
+
+    char *__lower =(char *)malloc(sizeof(s)+1);
+
+    for (size_t i = 0; s[i]; i++)
+    {
+        __lower[i] = (char)tolower((unsigned char)s[i]);
+    }
+
+    char *string_check = strrev(__lower);
+    bool rv = strcmp(s, string_check);
+    free(string_check);
+    return rv;
+}
+
 /**
  * @brief main function
  *
@@ -70,7 +104,7 @@ bool isPalindrome(const char *s)
 int main(int argc, char **argv)
 {
     // Test 1
-    printf("%s\n", isPalindrome("Hello") ? "true" : "false");
+    printf("%s\n", isPalindromeNormal("Hello") ? "true" : "false");
 
     FILE *INPUTFILE = stdin;
     FILE *OUTPUTFILE = stdout;
@@ -127,10 +161,6 @@ int main(int argc, char **argv)
     if (argc != 2)
     {
         error("to many arguments", argv[0]);
-    }
-
-    while ((read = getline(&line, &size, INPUTFILE)) != -1)
-    {
     }
 
     exit(EXIT_SUCCESS);
