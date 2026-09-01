@@ -12,10 +12,6 @@
  *
  */
 
-/**
- * @todo implement the error handling and the file input? It doesnt work somehow
- *
- */
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -32,7 +28,7 @@
  */
 static char *reverse(char *s)
 {
-    char *rv = (char *)malloc(sizeof(char) * strlen(s));
+    char *rv = (char *)malloc(strlen(s) + 1);
 
     if (rv == NULL)
     {
@@ -46,6 +42,7 @@ static char *reverse(char *s)
         rv[i] = s[strlen(s) - 1 - i];
     }
 
+    rv[strlen(s)] = '\0';
     return rv;
 }
 
@@ -57,7 +54,7 @@ static char *reverse(char *s)
  */
 static char *AsciiToBianry(char c)
 {
-    char *rv = (char *)malloc(sizeof(char) * 9);
+    char *rv = (char *)calloc(9, 1);
 
     if (rv == NULL)
     {
@@ -76,8 +73,8 @@ static char *AsciiToBianry(char c)
 
 static void wait_nanosleep(double time)
 {
-    time_t seconds = (long)time;
-    time_t nanoseconds = (long)((time - (double)seconds) * 1e9);
+    time_t seconds = (time_t)time;
+    long nanoseconds = (long)((time - (double)seconds) * 1e9);
     struct timespec t1 = {seconds, nanoseconds};
 
     if (nanosleep(&t1, NULL) == -1)
@@ -97,7 +94,8 @@ static void wait_nanosleep(double time)
 int main(int argc, char **argv)
 {
     FILE *INPUTFILE;
-    if (INPUTFILE == NULL)
+    FILE *OUTPUTFILE = stdout;
+    if (OUTPUTFILE == NULL)
     {
         printf("Error (%d): %s\n", errno, strerror(errno));
         exit(EXIT_FAILURE);
@@ -109,15 +107,8 @@ int main(int argc, char **argv)
     double seconds;
 
     bool optionOutput = false;
-    FILE *OUTPUTFILE = stdout;
 
-    if (OUTPUTFILE == NULL)
-    {
-        printf("Error (%d): %s\n", errno, strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-
-    while ((opt = getopt(argc, argv, "d:o:")) != -1)
+    while ((opt = getopt(argc, argv, "d:o::")) != -1)
     {
         switch (opt)
         {
@@ -170,7 +161,8 @@ int main(int argc, char **argv)
         }
     }
 
-    if (optind >= argc)
+    // Nasty, mit opind mit >= geht nicht 
+    if (optind > argc)
     {
         fprintf(stderr, "Expected argument after options\n");
         exit(EXIT_FAILURE);
@@ -178,7 +170,6 @@ int main(int argc, char **argv)
 
     do
     {
-
         if ((argc - optind) == 0)
             INPUTFILE = stdin;
 
@@ -202,12 +193,6 @@ int main(int argc, char **argv)
         fprintf(OUTPUTFILE, "\n");
         fclose(INPUTFILE);
     } while (++optind < argc);
-
-    fclose(INPUTFILE);
     fclose(OUTPUTFILE);
-
-    free(INPUTFILE);
-    free(OUTPUTFILE);
-
     exit(EXIT_SUCCESS);
 }
