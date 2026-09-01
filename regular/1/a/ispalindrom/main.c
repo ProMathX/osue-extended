@@ -8,7 +8,6 @@
  * @copyright Copyright (c) 2026
  *
  */
-
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -17,7 +16,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -25,35 +23,11 @@
     do                                                                                                                 \
     {                                                                                                                  \
         printf("%s\n", msg);                                                                                           \
+        fprintf(stderr, "Usage: %s [-i ignore case sensitivity] [-s ignore whitespace] [-o OUTPUTFILE] [FILE]\n",      \
+                program_name);                                                                                         \
         printf("Error (%d): %s\n", errno, strerror(errno));                                                            \
-        fprintf(stderr, "Usage: %s [-d DELAY] [-o OUTPUTFILE] [FILE]\n", program_name);                                \
         exit(EXIT_FAILURE);                                                                                            \
     } while (0)
-
-/**
- * @brief easily reverse the string
- *
- * @param s input string
- * @return char* returns reversed string
- */
-char *strrev(const char *s)
-{
-    char *rv = (char *)malloc(sizeof(char) * (strlen(s) + 1));
-
-    if (rv == NULL)
-    {
-        error("Couldn't allocate memory", "strrev()");
-    }
-
-    for (size_t i = 0; i < strlen(s); i++)
-    {
-        rv[i] = s[strlen(s) - 1 - i];
-    }
-
-    rv[strlen(s)] = '\0';
-
-    return rv;
-}
 
 /**
  * @brief checks simply the program if the given string is a palindrome
@@ -62,36 +36,51 @@ char *strrev(const char *s)
  * @return true if the string is a palindrome
  * @return false if the string is not a palindrome
  */
-bool isPalindromeNormal(const char *s)
-{
-    if (s == NULL)
-    {
-        error("Invalid String", "isPalindrome()");
-    }
-    char *string_check = strrev(s);
-    bool rv = strcmp(s, string_check);
-    free(string_check);
-    return rv;
-}
-
-bool isPalindromeIgnore(const char *s)
+bool isPalindrome(const char *s, bool ignoreWhiteSpace, bool ignoreCaseSensitivity)
 {
     if (s == NULL)
     {
         error("Invalid String", "isPalindrome()");
     }
 
-    char *__lower =(char *)malloc(sizeof(s)+1);
+    int first, last;
 
-    for (size_t i = 0; s[i]; i++)
+    first = 0;
+    last = (int)strlen(s) - 1;
+
+    while (first < last)
     {
-        __lower[i] = (char)tolower((unsigned char)s[i]);
-    }
+        if (ignoreWhiteSpace && isspace((unsigned char)s[first]))
+        {
+            first++;
+            continue;
+        }
 
-    char *string_check = strrev(__lower);
-    bool rv = strcmp(s, string_check);
-    free(string_check);
-    return rv;
+        if (ignoreWhiteSpace && isspace((unsigned char)s[last]))
+        {
+            last--;
+            continue;
+        }
+
+        char __a = s[first];
+        char __b = s[last];
+
+        if (ignoreCaseSensitivity)
+        {
+            __a = (char)tolower((unsigned char)s[first]);
+            __b = (char)tolower((unsigned char)s[last]);
+        }
+        if (__a != __b)
+        {
+            printf("%s is not a palindrome", s);
+            return false;
+        }
+
+        first++;
+        last--;
+    }
+    printf("%s is a palindrome\n", s);
+    return true;
 }
 
 /**
@@ -101,11 +90,9 @@ bool isPalindromeIgnore(const char *s)
  * @param argv argument vector
  * @return int
  */
+
 int main(int argc, char **argv)
 {
-    // Test 1
-    printf("%s\n", isPalindromeNormal("Hello") ? "true" : "false");
-
     FILE *INPUTFILE = stdin;
     FILE *OUTPUTFILE = stdout;
 
@@ -130,14 +117,12 @@ int main(int argc, char **argv)
 
     int c;
     /**
-     * @todo extended the user flags
-     *
+     * @todo implement the cases
      */
-
     while ((c = getopt(argc, argv, "iso:")) != -1)
     {
 
-        switch (option)
+        switch (c)
         {
         case 'i':
             ignoreWhiteSpace = true;
@@ -146,22 +131,63 @@ int main(int argc, char **argv)
 
         case 's':
             ignoreCaseSensitivity = true;
+
             break;
 
         case 'o':
             optionOutput = true;
+
+            OUTPUTFILE = fopen(optarg, "w");
+
+            if (OUTPUTFILE == NULL)
+                error("No output, error", argv[0]);
+            break;
+
+        case ':':
+            error("Error no Arguments given", argv[0]);
+            break;
+
+        case '?':
+            error("unknown arg", argv[0]);
             break;
         }
     }
 
-    char *line = NULL;
-    size_t size = 0;
-    ssize_t read;
-
-    if (argc != 2)
+    if (optind > argc)
     {
-        error("to many arguments", argv[0]);
+        error("to many arguments", "in main");
     }
 
+    do
+    {
+        if ((argc - optind) == 0)
+            INPUTFILE = stdin;
+        else
+            INPUTFILE = fopen(argv[optind], "r");
+
+        if (INPUTFILE == NULL)
+            error("Couldnt allocate input", "main");
+        char *line = NULL;
+        size_t line_buffer_len = 0;
+        ssize_t read_size = 0;
+
+        while ((read_size = getline(&line, &line_buffer_len, INPUTFILE)) != -1)
+        {
+            line[read_size - 1] = '\0';
+            if (isPalindrome(line, ignoreWhiteSpace, ignoreCaseSensitivity))
+            {
+                fputs(line, OUTPUTFILE);
+            }
+            // fprintf(OUTPUTFILE, "\n");
+        }
+        fflush(OUTPUTFILE);
+        free(line);
+        line = NULL;
+        line_buffer_len = 0;
+        assert(feof(INPUTFILE));
+        fclose(INPUTFILE);
+    } while (++optind < argc);
+
+    fclose(OUTPUTFILE);
     exit(EXIT_SUCCESS);
 }
