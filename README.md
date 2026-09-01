@@ -7,7 +7,7 @@ I created some templates, .clang-format and a generic Makefile on my gist:
 1. https://gist.github.com/ProMathX/8671409e58877019d647575ca541271e
 
 # ATTENTION
-For the implentation NO AI WAS USED I REPEAT NO AI, nor in VSCODE, nor to use as static analysis.
+For the implentation NO AI WAS USED I REPEAT NO AI, nor in VSCODE.
 Everything written in my own blood, tears and sweat, no goddamn clanker can replace us. Fuck clankers.
 
 ## The Programming setup:
