@@ -66,3 +66,9 @@ paar wichtige manpages:
 (Aus dem TU INF discord)
 
 
+For alternative solutions check out:
+
+- [@flofriday](https://github.com/flofriday/OSUE-2020)
+- [@filipppp](https://github.com/filipppp/OSUE-2021)
+- [@HED](https://github.com/HED-GIT/TU_WIEN_BETRIEBSSYSTEME)
+
