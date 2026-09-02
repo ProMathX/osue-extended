@@ -30,7 +30,7 @@
     } while (0)
 
 /**
- * @brief checks simply the program if the given string is a palindrome
+ * @brief checks simply the program if the given string is a palindrome stolen from geeks for geeks
  *
  * @param s input string
  * @return true if the string is a palindrome
@@ -72,14 +72,14 @@ bool isPalindrome(const char *s, bool ignoreWhiteSpace, bool ignoreCaseSensitivi
         }
         if (__a != __b)
         {
-            printf("%s is not a palindrome", s);
+            // printf("%s is not a palindrome", s);
             return false;
         }
 
         first++;
         last--;
     }
-    printf("%s is a palindrome\n", s);
+    // printf("%s is a palindrome\n", s);
     return true;
 }
 
@@ -95,8 +95,6 @@ int main(int argc, char **argv)
 {
     FILE *INPUTFILE = stdin;
     FILE *OUTPUTFILE = stdout;
-
-    int option;
     /**
      * @brief Specify output
      *
@@ -176,7 +174,21 @@ int main(int argc, char **argv)
             line[read_size - 1] = '\0';
             if (isPalindrome(line, ignoreWhiteSpace, ignoreCaseSensitivity))
             {
-                fputs(line, OUTPUTFILE);
+                printf("%s is a palindrome\n", line);
+                if (OUTPUTFILE != stdout)
+                {
+                    fputs(line, OUTPUTFILE);
+                    fprintf(OUTPUTFILE, "is a palindrome\n");
+                }
+            }
+            else
+            {
+                printf("%s is not a palindrome\n", line);
+                if (OUTPUTFILE != stdout)
+                {
+                    fputs(line, OUTPUTFILE);
+                    fprintf(OUTPUTFILE, "is not a palindrome\n");
+                }
             }
             // fprintf(OUTPUTFILE, "\n");
         }
