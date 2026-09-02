@@ -8,9 +8,7 @@
  * @copyright Copyright (c) 2026
  *
  */
-
 #include <assert.h>
-#include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -19,7 +17,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
-
+#define ASCII 256
 #define error(msg, program_name)                                                                                       \
     do                                                                                                                 \
     {                                                                                                                  \
@@ -29,7 +27,34 @@
         exit(EXIT_FAILURE);                                                                                            \
     } while (0)
 
-void compress(char *);
+void compress(FILE *INPUTFILE, FILE *OUTPUTFILE)
+{
+    if (INPUTFILE == NULL)
+        error("invalid input, empty String", "compress()");
+
+    if (OUTPUTFILE == NULL)
+        error("Ouput is not specified", "compress()");
+
+    int readChar;
+    int count = 1;
+    char currenChar = (char)fgetc(INPUTFILE);
+
+    while ((readChar = fgetc(INPUTFILE)) != EOF)
+    {
+        if (readChar == currenChar)
+        {
+            count++;
+        }
+
+        else
+        {
+            fprintf(OUTPUTFILE, "%c%d", currenChar, count);
+            currenChar = (char)readChar;
+            count = 1;
+        }
+    }
+    fprintf(OUTPUTFILE, "%c%d", currenChar, count);
+}
 
 int main(int argc, char **argv)
 {
@@ -39,15 +64,15 @@ int main(int argc, char **argv)
     FILE *OUTPUTFILE = stdout;
     assert(OUTPUTFILE != NULL);
 
-    bool optionOutput = false;
+    // bool optionOutput = false;
 
     int option;
-    while ((option = getopt(argc, argv, "o:")))
+    while ((option = getopt(argc, argv, "o:")) != -1)
     {
         switch (option)
         {
         case 'o':
-            optionOutput = true;
+            // optionOutput = true;
             OUTPUTFILE = fopen(optarg, "w");
             assert(OUTPUTFILE != NULL);
             break;
@@ -65,13 +90,6 @@ int main(int argc, char **argv)
     if (optind > argc)
     {
         error("to many arguments", "in main");
-    }
-
-    int xs[128];
-
-    for (int i = 0; i < 128; i++)
-    {
-        xs[i] = 0;
     }
 
     /**
@@ -94,30 +112,13 @@ int main(int argc, char **argv)
         if (INPUTFILE == NULL)
             error("Couldnt allocate input", "main");
 
-        ssize_t read = 0;
-        char *line = NULL;
-        size_t line_buffer_len = 0;
+        compress(INPUTFILE, OUTPUTFILE);
 
-        while ((read = getline(&line, &line_buffer_len, INPUTFILE)) != -1)
-        {
-            compress(line);
-            free(line);
-        }
         fflush(OUTPUTFILE);
-        free(line);
-        line = NULL;
-        line_buffer_len = 0;
         assert(feof(INPUTFILE));
         fclose(INPUTFILE);
     } while (++optind < argc);
 
-    fflush(OUTPUTFILE);
-    assert(feof(INPUTFILE));
-    fclose(INPUTFILE);
     fclose(OUTPUTFILE);
     exit(EXIT_SUCCESS);
-}
-
-void compress(char *s)
-{
 }
