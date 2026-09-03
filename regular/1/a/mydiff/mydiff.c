@@ -53,19 +53,15 @@ void compareLines(char *s1_tobecompared, char *s2, int lineNumber, FILE *OUTPUTF
     /**
      * @brief  Compare two lines character-by-character and count mismatches.
      *
-     * @note   BUG I ACTUALLY HIT: the loop bound was taken from s1 only
+     * @note   BUG  HIT: the loop bound was taken from s1 only
      *         (strlen(s1) / until s1's '\n'), while s2 was indexed with the
      *         same index i.  If s2 is shorter than s1, this reads past the
-     *         end of s2 -- undefined behavior.
+     *         end of s2 -- UDB.
      *
      *         Valgrind will NOT reliably catch this: it only flags an
      *         out-of-bounds read if the byte read happens to fall outside
      *         the allocated heap region.  A clean valgrind run is evidence
      *         of "no leaks", not evidence of "bounds-safe".
-     *
-     *         Lesson: when iterating two buffers of independent, unrelated
-     *         length in lockstep, the loop bound must be derived from BOTH,
-     *         e.g. i < min(len1, len2), not from one of them alone.
      */
     for (size_t i = 0; i < strlen(s1_tobecompared) && s1_tobecompared[i] != '\n' && i < strlen(s2) && s2[i] != '\n';
          ++i)
@@ -81,9 +77,7 @@ void compareLines(char *s1_tobecompared, char *s2, int lineNumber, FILE *OUTPUTF
                 diffCount++;
         }
         else if (__a != __b)
-        {
             diffCount++;
-        }
     }
     if (diffCount > 0)
         fprintf(OUTPUTFILE, "Line: %d characters: %d\n", lineNumber, diffCount);
@@ -126,8 +120,6 @@ int diffInput(FILE *MainInput, FILE *CompareInput, FILE *OUTPUTFILE, bool ignore
     {
         int cmp = ignoreCaseSensitivity ? strncasecmp(line_MainInput, line_CompareInput, (size_t)read_MainInput)
                                         : strcmp(line_MainInput, line_CompareInput);
-
-        // fprintf(OUTPUTFILE, "%d %d\n", (int)read_MainInput, cmp);
 
         if (cmp != 0)
         {
