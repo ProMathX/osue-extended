@@ -10,6 +10,7 @@
  */
 
 #include <assert.h>
+#include <bits/posix2_lim.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -33,15 +34,31 @@
 /**
  * @brief compares 2 Lines
  *
- * @param s1_tobecompared string literal to read from
- * @param s2 string literal to be compared with
+ * @param s1_tobecompared string literal to line-> from
+ * @param line string literal to be compared with
  * @param lineNumber line of current line
  * @param OUTPUTFILE  OUTPUTFILE (stdout)
  * @param caseINSensitiv bool acknowledging case sentivity
  */
-void compareLines(char *s1_tobecompared, char *s2, int lineNumber, FILE *OUTPUTFILE, bool caseINSensitiv)
+
+typedef struct OPTIONS_LINE
 {
-    if (OUTPUTFILE == NULL)
+    char *s1;
+    char *s2;
+    bool characterChase;
+} OPTIONS_LINE;
+
+typedef struct IO
+{
+    FILE *__MAIN_INPUTFILE;
+    FILE *__MAIN_COMPAREFILE;
+    FILE *OUTPUTFILE;
+
+} IO;
+
+void compareLines(OPTIONS_LINE *line, IO *files, int lineNumber)
+{
+    if (files->OUTPUTFILE == NULL)
         error("No Output specified", "compareLines()");
 
     if (lineNumber <= 0)
@@ -54,22 +71,21 @@ void compareLines(char *s1_tobecompared, char *s2, int lineNumber, FILE *OUTPUTF
      * @brief  Compare two lines character-by-character and count mismatches.
      *
      * @note   BUG  HIT: the loop bound was taken from s1 only
-     *         (strlen(s1) / until s1's '\n'), while s2 was indexed with the
-     *         same index i.  If s2 is shorter than s1, this reads past the
-     *         end of s2 -- UDB.
+     *         (strlen(s1) / until s1's '\n'), while line->.s2 was indexed with the
+     *         same index i.  If line->.s2 is shorter than s1, this reads past the
+     *         end of line->.s2 -- UDB.
      *
      *         Valgrind will NOT reliably catch this: it only flags an
-     *         out-of-bounds read if the byte read happens to fall outside
+     *         out-of-bounds line-> if the byte line-> happens to fall outside
      *         the allocated heap region.  A clean valgrind run is evidence
      *         of "no leaks", not evidence of "bounds-safe".
      */
-    for (size_t i = 0; i < strlen(s1_tobecompared) && s1_tobecompared[i] != '\n' && i < strlen(s2) && s2[i] != '\n';
-         ++i)
+    for (size_t i = 0; i < strlen(line->s1) && line->s1[i] != '\n' && i < strlen(line->s2) && line->s2[i] != '\n'; ++i)
     {
-        __a = s1_tobecompared[i];
-        __b = s2[i];
+        __a = line->s1[i];
+        __b = line->s2[i];
 
-        if (caseINSensitiv)
+        if (line->characterChase)
         {
             char a = (char)tolower(__a), b = (char)tolower(__b);
 
@@ -80,26 +96,23 @@ void compareLines(char *s1_tobecompared, char *s2, int lineNumber, FILE *OUTPUTF
             diffCount++;
     }
     if (diffCount > 0)
-        fprintf(OUTPUTFILE, "Line: %d characters: %d\n", lineNumber, diffCount);
+        fprintf(files->OUTPUTFILE, "Line: %d characters: %d\n", lineNumber, diffCount);
 }
 
 /**
- * @brief
- *
- * @param MainInput INPUTFILE1
- * @param CompareInput  INPUTFILE2
- * @param OUTPUTFILE OUTPUTFILE (standard stdout)
- * @param ignoreCaseSensitivity specified with the -i flag, ignores case sensitivity
- * @return int 0 for success -1 for no success
+ * @brief diffs the input
+ * @param files
+ * @param line
+ * @return int
  */
-int diffInput(FILE *MainInput, FILE *CompareInput, FILE *OUTPUTFILE, bool ignoreCaseSensitivity)
+int diffInput(IO *files, OPTIONS_LINE *line)
 {
-    if (MainInput == NULL)
+    if (files->__MAIN_INPUTFILE == NULL)
     {
-        error("INPUTFILE emtpy", "diffInput()");
+        error("INPUTFILE1 emtpy", "diffInput()");
         return -1;
     }
-    if (CompareInput == NULL)
+    if (files->__MAIN_COMPAREFILE == NULL)
     {
         error("INPUTFILE 2 empty", "diffinput");
         return -1;
@@ -115,19 +128,23 @@ int diffInput(FILE *MainInput, FILE *CompareInput, FILE *OUTPUTFILE, bool ignore
 
     int lineNumber = 1;
 
-    while (((read_MainInput = getline(&line_MainInput, &line_buffer_len_MainInput, MainInput)) != -1) &&
-           (read_CompareInput = getline(&line_CompareInput, &line_buffer_len_CompareInput, CompareInput)) != -1)
+    while (((read_MainInput = getline(&line_MainInput, &line_buffer_len_MainInput, files->__MAIN_INPUTFILE)) != -1) &&
+           (read_CompareInput =
+                getline(&line_CompareInput, &line_buffer_len_CompareInput, files->__MAIN_COMPAREFILE)) != -1)
     {
-        int cmp = ignoreCaseSensitivity ? strncasecmp(line_MainInput, line_CompareInput, (size_t)read_MainInput)
-                                        : strcmp(line_MainInput, line_CompareInput);
+        line->s1 = line_MainInput;
+        line->s2 = line_CompareInput;
+        int cmp = line->characterChase ? strncasecmp(line_MainInput, line_CompareInput, (size_t)read_MainInput)
+                                       : strcmp(line_MainInput, line_CompareInput);
 
         if (cmp != 0)
         {
-            compareLines(line_MainInput, line_CompareInput, lineNumber, OUTPUTFILE, ignoreCaseSensitivity);
+            compareLines(line, files, lineNumber);
             lineNumber++;
         }
         else
             lineNumber++;
+        // fprintf(stderr, "line1: %s | line2: %s\n", line_MainInput, line_CompareInput);
     }
 
     line_buffer_len_CompareInput = 0, read_CompareInput = 0, line_buffer_len_MainInput = 0, read_MainInput = 0;
@@ -142,14 +159,14 @@ int main(int argc, char **argv)
     FILE *OUTPUTFILE = stdout;
     if (OUTPUTFILE == NULL)
         error("Failed to allocate OUPUTFILE", "OUTPUTFILE");
-    bool caseInsensitiv = false, optionOutput = false;
+    bool CharacterParseSetting = false, optionOutput = false;
     int option;
     while ((option = getopt(argc, argv, "io:")) != -1)
     {
         switch (option)
         {
         case 'i':
-            caseInsensitiv = true;
+            CharacterParseSetting = true;
             break;
         case 'o':
             optionOutput = true;
@@ -177,11 +194,15 @@ int main(int argc, char **argv)
 
         assert(INPUTFILE1 != NULL);
 
-        diffInput(INPUTFILE1, INPUTFILE2, OUTPUTFILE, caseInsensitiv);
+        IO __TEST_FILES = {.__MAIN_INPUTFILE = INPUTFILE1, .__MAIN_COMPAREFILE = INPUTFILE2, .OUTPUTFILE = OUTPUTFILE};
+
+        OPTIONS_LINE line_settings = {.s1 = NULL, .s2 = NULL, .characterChase = CharacterParseSetting};
+
+        diffInput(&__TEST_FILES, &line_settings);
 
         fflush(OUTPUTFILE);
-        assert(feof(INPUTFILE1));
-        // assert(feof(INPUTFILE2));
+        //  assert(feof(INPUTFILE1));
+        //  assert(feof(INPUTFILE2));
         fclose(INPUTFILE1);
         fclose(INPUTFILE2);
     } while (optind < argc);
