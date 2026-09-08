@@ -192,6 +192,7 @@ int main(int argc, char **argv)
         optind += 2;
 
         assert(INPUTFILE1 != NULL);
+        assert(INPUTFILE2 != NULL);
 
         IO __TEST_FILES = {.__MAIN_INPUTFILE = INPUTFILE1, .__MAIN_COMPAREFILE = INPUTFILE2, .OUTPUTFILE = OUTPUTFILE};
 
