@@ -10,7 +10,6 @@
  */
 
 #include <assert.h>
-#include <bits/posix2_lim.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
