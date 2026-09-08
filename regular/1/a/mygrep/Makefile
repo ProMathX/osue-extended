@@ -6,17 +6,19 @@ default = -std=c99 -pedantic -g -Wall  $(defs)
 verbose = -std=c99 -pedantic -g3 -Wall -Wextra -Wwrite-strings -Wconversion -Wformat=2 -Warray-bounds -Wstack-protector -Wshadow $(defs)
 library = -lpthread -pthread -lrt
 
+TARGET = mygrep
+OBJS = mygrep.o
 
-all: myexpand
-myexpand: myexpand.o
-	gcc -o myexpand myexpand.o $(library) $(verbose)
+all: $(TARGET)
+$(TARGET):$(OBJS)
+	gcc $(library) $(verbose) -o $@ $^
 
-myexpand.o: myexpand.c
-		gcc -c myexpand.c $(verbose)
+%.o: %.c
+	gcc $(library) $(verbose) -c -o $@ $<
 clean:
-	shred -uvz myexpand *.o
+	rm -rf $(TARGET) $(OBJS)
 
-
+#dependencies
 
 
 
