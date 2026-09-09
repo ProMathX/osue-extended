@@ -11,7 +11,6 @@
  * <https://linux.die.net/man/3/qsort> for further details
  */
 #include <assert.h>
-#include <bits/getopt_core.h>
 #include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -71,34 +70,27 @@ int readLines(FILE *input, lines_t *lines)
     size_t line_buffer_len = 0;
     ssize_t read_size = 0;
 
-    while ((read_size = getline(&line, &line_buffer_len, input)))
+    while ((read_size = getline(&line, &line_buffer_len, input)) != -1)
     {
         if (read_size > 0 && line[read_size - 1] == '\n')
             line[read_size - 1] = '\0';
 
         if (lines->count == lines->capacity)
         {
-            // realloc
-
-            lines->capacity = lines->capacity * 2;
+            // initialize base capacity
+            lines->capacity = lines->capacity ? lines->capacity * 2 : 16;
             lines->data = realloc(lines->data, lines->capacity * sizeof(char *));
-
             if (lines->data == NULL)
-                error("realloc failed", "mysort");
+                error("realloc failed", "readLines()");
         }
+
         lines->data[lines->count++] = strdup(line);
     }
+
     free(line);
     return 0;
 }
 
-/**
- * @brief sortiert lines->data und schreibt alle Zeilen nach output
- *
- * @param lines  gemeinsames, bereits vollstaendig befuelltes Array
- * @param output Ziel der Ausgabe
- * @param reverse true -> absteigend sortieren (cmpstringp_rev), false -> aufsteigend (cmpstringp)
- */
 void sortAndPrint(lines_t *lines, FILE *output, bool reverse)
 {
     qsort(lines->data, lines->count, sizeof(char *), reverse ? cmpstringp_rev : cmpstringp);
