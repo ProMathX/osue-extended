@@ -78,7 +78,7 @@ int readLines(FILE *input, lines_t *lines)
         if (lines->count == lines->capacity)
         {
             // initialize base capacity
-            lines->capacity = lines->capacity ? lines->capacity * 2 : 16;
+            lines->capacity = lines->capacity ? lines->capacity * 2 : 128;
             lines->data = realloc(lines->data, lines->capacity * sizeof(char *));
             if (lines->data == NULL)
                 error("realloc failed", "readLines()");
