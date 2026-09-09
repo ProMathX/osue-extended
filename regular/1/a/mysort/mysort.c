@@ -11,7 +11,6 @@
  * <https://linux.die.net/man/3/qsort> for further details
  */
 #include <assert.h>
-#include <ctype.h>
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
